@@ -2389,24 +2389,39 @@ function () {
 
     this.btnBLock = document.createElement('div');
     this.colorPicker = document.createElement('input');
+    this.clear = document.createElement('div');
+    this.scale = localStorage.getItem('scale') || 1;
+    this.color = localStorage.getItem('color') || '#ffffff';
     this.btnBLock.addEventListener('click', function (e) {
       return _this.onScaleChange(e);
     });
     this.colorPicker.addEventListener('input', function (e) {
       return _this.onColorChange(e);
     });
+    this.clear.addEventListener('click', function () {
+      return _this.reset();
+    });
   }
 
   _createClass(Customizator, [{
-    key: "onScaleChange",
-    value: function onScaleChange(e) {
-      var scale;
+    key: "injectStyle",
+    value: function injectStyle() {
+      var style = document.createElement('style');
+      style.innerHTML = "\n        .panel {\n            display: flex;\n            justify-content: space-around;\n            align-items: center;\n            position: fixed;\n            top: 10px;\n            right: 0;\n            border: 1px solid rgba(0,0,0, .2);\n            box-shadow: 0 0 20px rgba(0,0,0, .5);\n            width: 300px;\n            height: 60px;\n            background-color: #fff;\n\n        }\n\n        .scale {\n            display: flex;\n            justify-content: space-around;\n            align-items: center;\n            width: 100px;\n            height: 40px;\n        }\n\n        .scale_btn {\n            display: block;\n            width: 40px;\n            height: 40px;\n            border: 1px solid rgba(0,0,0, .2);\n            border-radius: 4px;\n            font-size: 18px;\n        }\n\n        .color {\n            width: 40px;\n            height: 40px;\n        }\n\n        .clear {\n            font-size: 30px;\n            cursor: pointer;\n        }\n    ";
+      document.querySelector('head').appendChild(style);
+    }
+  }, {
+    key: "setBgColor",
+    value: function setBgColor() {
+      document.body.style.backgroundColor = this.color;
+      this.colorPicker.value = this.color;
+    }
+  }, {
+    key: "setScale",
+    value: function setScale() {
+      var _this2 = this;
 
-      if (e.target.value) {
-        scale = Number(e.target.value.replace(/x/g, ''));
-      }
-
-      function recursy(element) {
+      var recursy = function recursy(element) {
         element.childNodes.forEach(function (node) {
           if (node.nodeName === '#text') {
             if (!node.parentNode.dataset.fz) {
@@ -2414,31 +2429,54 @@ function () {
               node.parentNode.setAttribute('data-fz', value.replace(/\D/g, ''));
             }
 
-            node.parentNode.style.fontSize = node.parentNode.dataset.fz * scale + 'px';
+            node.parentNode.style.fontSize = node.parentNode.dataset.fz * _this2.scale + 'px';
           } else {
-            recursy(node);
+            if (!node.classList.contains('panel')) recursy(node);
           }
         });
-      }
+      };
 
       recursy(document.body);
     }
   }, {
+    key: "onScaleChange",
+    value: function onScaleChange(e) {
+      this.scale = Number(e.target.value.replace(/x/g, ''));
+      localStorage.setItem('scale', this.scale);
+      this.setScale();
+    }
+  }, {
     key: "onColorChange",
     value: function onColorChange(e) {
-      document.body.style.backgroundColor = e.target.value;
+      this.color = e.target.value;
+      localStorage.setItem('color', this.color);
+      this.setBgColor();
+    }
+  }, {
+    key: "reset",
+    value: function reset() {
+      localStorage.clear();
+      this.scale = 1;
+      this.color = '#ffffff';
+      this.setBgColor();
+      this.setScale();
     }
   }, {
     key: "render",
     value: function render() {
+      this.injectStyle();
+      this.setBgColor();
+      this.setScale();
       var panel = document.createElement('div');
       var scaleInputS = document.createElement('input');
       var scaleInputM = document.createElement('input');
+      this.clear.innerHTML = "&times;";
       panel.classList.add('panel');
       this.btnBLock.classList.add('scale');
       scaleInputS.classList.add('scale_btn');
       scaleInputM.classList.add('scale_btn');
       this.colorPicker.classList.add('color');
+      this.clear.classList.add('clear');
       scaleInputS.setAttribute('type', 'button');
       scaleInputM.setAttribute('type', 'button');
       scaleInputS.setAttribute('value', '1x');
@@ -2446,7 +2484,7 @@ function () {
       this.colorPicker.setAttribute('type', 'color');
       this.colorPicker.setAttribute('value', '#ffffff');
       document.body.append(panel);
-      panel.append(this.btnBLock, this.colorPicker);
+      panel.append(this.btnBLock, this.colorPicker, this.clear);
       this.btnBLock.append(scaleInputS, scaleInputM);
     }
   }]);
